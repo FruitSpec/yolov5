@@ -9,6 +9,8 @@ import cv2
 import torch
 import torch.backends.cudnn as cudnn
 from numpy import random
+from numpy import mean
+
 
 from models.experimental import attempt_load
 from utils.datasets import LoadStreams, LoadImages
@@ -60,6 +62,8 @@ def detect(save_img=False):
     t0 = time.time()
     img = torch.zeros((1, 3, imgsz, imgsz), device=device)  # init img
     _ = model(img.half() if half else img) if device.type != 'cpu' else None  # run once
+    mse = []
+    iter = 0
     for path, img, im0s, vid_cap in dataset:
         img = torch.from_numpy(img).to(device)
         img = img.half() if half else img.float()  # uint8 to fp16/32
@@ -97,6 +101,8 @@ def detect(save_img=False):
                 # Print results
                 for c in det[:, -1].unique():
                     n = (det[:, -1] == c).sum()  # detections per class
+                    filename = path.split('/')[-1].replace('.jpg','')
+                    mse.append(compute_loss(filename, int(n)))
                     s += '%g %ss, ' % (n, names[int(c)])  # add to string
 
                 # Write results
@@ -136,20 +142,36 @@ def detect(save_img=False):
                         vid_writer = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*fourcc), fps, (w, h))
                     vid_writer.write(im0)
 
+        iter+=1
+
     if save_txt or save_img:
         print('Results saved to %s' % Path(out))
         if platform == 'darwin' and not opt.update:  # MacOS
             os.system('open ' + save_path)
-
+    print('MSE= %1.4f'%(sum(mse)/len(mse)))
     print('Done. (%.3fs)' % (time.time() - t0))
 
+def create_gtdict(source):
+    dict = {}
+    path = os.path.join(source,'../','labels')
+    for filename in os.listdir(path):
+        with open(os.path.join(path,filename), 'r') as f:
+            for i,l in enumerate(f):
+                pass
+            dict[filename.replace('.txt','')] = i+1
+    return dict
+
+def compute_loss(name, c):
+    gt = gt_dict[name]
+    mse = abs(gt - c)/gt
+    return mse
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', nargs='+', type=str, default='yolov5s.pt', help='model.pt path(s)')
     parser.add_argument('--source', type=str, default='inference/images', help='source')  # file/folder, 0 for webcam
     parser.add_argument('--output', type=str, default='inference/output', help='output folder')  # output folder
-    parser.add_argument('--img-size', type=int, default=640, help='inference size (pixels)')
+    parser.add_argument('--img-size', type=int, default=416, help='inference size (pixels)')
     parser.add_argument('--conf-thres', type=float, default=0.4, help='object confidence threshold')
     parser.add_argument('--iou-thres', type=float, default=0.5, help='IOU threshold for NMS')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
@@ -162,6 +184,8 @@ if __name__ == '__main__':
     opt = parser.parse_args()
     print(opt)
 
+
+    gt_dict = create_gtdict(opt.source)
     with torch.no_grad():
         if opt.update:  # update all models (to fix SourceChangeWarning)
             for opt.weights in ['yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt']:
