@@ -117,7 +117,7 @@ def detect(save_img=False):
                         plot_one_box(xyxy, im0, color=colors[int(cls)], line_thickness=2)
 
             # Print time (inference + NMS)
-            print('%sDone. (%.3fs)' % (s, t2 - t1))
+            # print('%sDone. (%.3fs)' % (s, t2 - t1))
 
             # Stream results
             if view_img:
@@ -150,6 +150,7 @@ def detect(save_img=False):
             os.system('open ' + save_path)
     print('MSE= %1.4f'%(sum(mse)/len(mse)))
     print('Done. (%.3fs)' % (time.time() - t0))
+    return sum(mse)/len(mse)
 
 def create_gtdict(source):
     dict = {}
@@ -189,7 +190,7 @@ if __name__ == '__main__':
     with torch.no_grad():
         if opt.update:  # update all models (to fix SourceChangeWarning)
             for opt.weights in ['yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt']:
-                detect()
+                err = detect()
                 strip_optimizer(opt.weights)
         else:
-            detect()
+            err = detect()
