@@ -102,7 +102,7 @@ def detect(save_img=False):
                 for c in det[:, -1].unique():
                     n = (det[:, -1] == c).sum()  # detections per class
                     filename = path.split('/')[-1].replace('.jpg','')
-                    mse.append(compute_loss(filename, int(n)))
+                    #mse.append(compute_loss(filename, int(n)))
                     s += '%g %ss, ' % (n, names[int(c)])  # add to string
 
                 # Write results
@@ -148,9 +148,9 @@ def detect(save_img=False):
         print('Results saved to %s' % Path(out))
         if platform == 'darwin' and not opt.update:  # MacOS
             os.system('open ' + save_path)
-    print('MSE= %1.4f'%(sum(mse)/len(mse)))
+    #print('MSE= %1.4f'%(sum(mse)/len(mse)))
     print('Done. (%.3fs)' % (time.time() - t0))
-    return sum(mse)/len(mse)
+    return 1
 
 def create_gtdict(source):
     dict = {}
