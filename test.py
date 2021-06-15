@@ -7,7 +7,7 @@ import datetime
 import numpy as np
 import torch
 import yaml
-from tqdm import tqdm
+from tqdm.notebook import tqdm
 import wandb
 from models.experimental import attempt_load
 from utils.datasets import create_dataloader
@@ -34,6 +34,7 @@ def test(data,
          imgsz=640,
          conf_thres=0.001,
          iou_thres=0.6,  # for NMS
+         wandb=None,
          save_json=False,
          single_cls=False,
          augment=False,
@@ -310,6 +311,7 @@ if __name__ == '__main__':
     parser.add_argument('--save-json', action='store_true', help='save a cocoapi-compatible JSON results file')
     parser.add_argument('--project', default='runs/test', help='save to project/name')
     parser.add_argument('--name', default='exp', help='save to project/name')
+    parser.add_argument('--wandb', default=None, help='external wandb client')
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
     opt = parser.parse_args()
     opt.save_json |= opt.data.endswith('coco.yaml')
@@ -323,6 +325,7 @@ if __name__ == '__main__':
              opt.img_size,
              opt.conf_thres,
              opt.iou_thres,
+             opt.wandb,
              opt.save_json,
              opt.single_cls,
              opt.augment,
